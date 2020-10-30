@@ -1,0 +1,30 @@
+# NOTE:  The persisten volume below uses the hostPath which is not ideal for stateful applications like Postgresql.
+# Using this only for the demonstration purpose and due to time contstraint. We can use portworx volume to implement High availablity of the Postgresql 
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: koho-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+---
+#Create persistent volume claim, to use the portworx storage class. 
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: koho-pvc
+spec:
+   storageClassName: manual
+   accessModes:
+     - ReadWriteMany
+   resources:
+     requests:
+       storage: 2Gi
+---

@@ -1,0 +1,70 @@
+#Manifests to create a postgresql db and service to expose it. 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qledger-db-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: qledger-db
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qledger-db
+  labels:
+    app: qledger-db
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: qledger-db
+  template:
+    metadata:
+      labels:
+        app: qledger-db
+    spec:
+      containers:
+        - image: postgres:11
+          name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: qledger
+            - name: POSTGRES_PASSWORD
+              value: password
+            - name: POSTGRES_DB
+              value: qledger-db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata 
+          volumeMounts:
+          - mountPath: /var/lib/postgresql/data
+            name: postgredb
+          ports:
+            - containerPort: 5432
+              name: tcp
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+          - name: postgredb
+            persistentVolumeClaim:
+              claimName: koho-pvc
+      restartPolicy: Always
