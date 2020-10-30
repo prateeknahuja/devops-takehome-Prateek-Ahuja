@@ -172,20 +172,76 @@ If you haven't connected to the GKE cluster already, use the section above to co
         - Deployment of Postgres sql with 1 pod. 
         - Cluster Ip service to expose the deploment on port 5432 inside the cluster.
 
-		
+3. Give it 2-3 mins for the pods to be ready. Go to GCP console -> Kubernetes engine -> workloads and you will see two deployment running. 
+
+4. Then go to GCP console -> Kubernetes engine -> Services & Ingress. 
+    You will find the loadbalance ip of the qledger app, hosted on port 8080. 
+
+5. You can now use this ip:port to hit the Qledger app running on the cluster. 
+
+
+
+######################
+Testing 
+######################
+1. In order to test you will need any tool from which you can make api calls. 
+   You can use Postman to make the api call. 
+
+2. Go to Postman -> new -> request
+3. Change the request type to post 
+4. Use the url  http://<loadbalancerip>:8080/v1/accounts
+5. In the header use the below values
+    - content-type = application/json
+    - Authorization =  qledger
+
+6. Inside the body section, paste the below json
+{
+  "id": "alice",
+  "data": {
+    "product": "qw",
+    "date": "2017-01-01"
+  }
+}
+
+7. Click send. Check the response for success. 
+
+8. Now let check if the account was created in the database. 
+9. For this similarly make a get request 
+10. url will be the same http://<loadbalancerip>:8080/v1/accounts
+11. Headers will be the same as above. 
+12. In the body section add the below json 
+
+{
+  "query": {
+      "must": {
+        "fields": [
+            {"id": {"eq": "alice"}}
+        ]
+      }
+  }
+}
+
+13. Check the response and you will see the account information. 
+
+
 		
 		
 NOTES:
 
 1. Since the application runs on kubernetes in a multi region it enables the high availability for the qledger app. 
-	If a pod goes down, the deployment controller will spin up a new pod automatically. 
-	If a node goes down in one zone, The new pods gets scheduled in the available nodes on the other zones in the region. 
+	- If a pod goes down, the deployment controller will spin up a new pod automatically. 
+	- If a node goes down in one zone, The new pods gets scheduled in the available nodes on the other zones in the region. 
 
 2. For Postgres database, I am currently using the Persistent volume and Persistent volume claim which will make sure the data is retained even if the pod goes down. 
 	If the Pod goes down, the deployment controller will schedule another pod for database and still point to the same Persistent volume so that the data is retained. 
-	
-	
-	IMPORTANT : Currently the persistent volume is using the hostpath as a volume type. Hostpath is available as long as the node is available.
+		
+
+IMPORTANT THING TO NOTE
+
+	1. I have configured the postgre db pods with the persistent volume. 
+    Due to time constraints, I am currently using the hostPath volume type which will persist the volume as long as the node is available. 
+    
+    2. As a next step, I am currently trying to configure the high availability of the Postgre SQL using the Portworx volume. Portworx will manage the active replication of the volume so that we do not have to manually manage it via stateful sets etc. I will push the code for this as soon as it is successfully tested.
 
 
 	
