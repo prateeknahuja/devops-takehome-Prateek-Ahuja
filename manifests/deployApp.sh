@@ -1,5 +1,5 @@
 #Update the local kubeconfig with the credentials and endpoint info to connect to the GKE cluster. 
-if [ ! -z "$" ] then
+if [ ! -z "$" ]; then
 gcloud container clusters get-credentials $cluster_name --region=$region
 fi
 
